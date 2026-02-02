@@ -1,0 +1,177 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-honeypot
+  namespace: deception-system
+  labels:
+    app: ssh-honeypot
+    component: honeypot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ssh-honeypot
+  template:
+    metadata:
+      labels:
+        app: ssh-honeypot
+        component: honeypot
+    spec:
+      priorityClassName: low-priority
+      containers:
+      - name: ssh-honeypot
+        image: deception-system/ssh-honeypot:latest
+        ports:
+        - containerPort: 2222
+          name: ssh
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: MAX_CONNECTIONS
+          value: "25"
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/honeypot
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 50Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssh-honeypot
+  namespace: deception-system
+spec:
+  selector:
+    app: ssh-honeypot
+  ports:
+  - port: 2222
+    targetPort: 2222
+    name: ssh
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-honeypot
+  namespace: deception-system
+  labels:
+    app: http-honeypot
+    component: honeypot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: http-honeypot
+  template:
+    metadata:
+      labels:
+        app: http-honeypot
+        component: honeypot
+    spec:
+      priorityClassName: low-priority
+      containers:
+      - name: http-honeypot
+        image: deception-system/http-honeypot:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/honeypot
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 50Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-honeypot
+  namespace: deception-system
+spec:
+  selector:
+    app: http-honeypot
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-honeypot
+  namespace: deception-system
+  labels:
+    app: db-honeypot
+    component: honeypot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-honeypot
+  template:
+    metadata:
+      labels:
+        app: db-honeypot
+        component: honeypot
+    spec:
+      priorityClassName: low-priority
+      containers:
+      - name: db-honeypot
+        image: deception-system/db-honeypot:latest
+        ports:
+        - containerPort: 3306
+          name: mysql
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+        env:
+        - name: LOG_LEVEL
+          value: "INFO"
+        - name: PROTOCOL
+          value: "mysql"
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/honeypot
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 50Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-honeypot
+  namespace: deception-system
+spec:
+  selector:
+    app: db-honeypot
+  ports:
+  - port: 3306
+    targetPort: 3306
+    name: mysql
+  type: ClusterIP

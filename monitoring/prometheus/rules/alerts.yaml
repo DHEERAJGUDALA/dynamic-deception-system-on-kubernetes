@@ -1,0 +1,99 @@
+groups:
+  - name: honeypot-alerts
+    interval: 30s
+    rules:
+      # SSH Brute Force Detection
+      - alert: SSHBruteForceAttempt
+        expr: rate(ssh_login_attempts_total{status="failed"}[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+          component: ssh-honeypot
+        annotations:
+          summary: "SSH brute force detected from {{ $labels.source_ip }}"
+          description: "More than 10 failed SSH login attempts per minute from {{ $labels.source_ip }}"
+
+      # SQL Injection Detection
+      - alert: SQLInjectionDetected
+        expr: increase(db_sql_injection_attempts_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          component: db-honeypot
+        annotations:
+          summary: "SQL injection attempt detected"
+          description: "SQL injection pattern detected from {{ $labels.source_ip }}"
+
+      # Port Scan Detection
+      - alert: PortScanDetected
+        expr: count by (source_ip) (increase(honeypot_connection_total[1m])) > 5
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Possible port scan from {{ $labels.source_ip }}"
+          description: "Multiple honeypots contacted from same source in short time"
+
+      # HTTP Attack Detection
+      - alert: HTTPAttackDetected
+        expr: increase(http_attack_attempts_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: high
+          component: http-honeypot
+        annotations:
+          summary: "HTTP attack attempt detected"
+          description: "Attack type: {{ $labels.attack_type }} from {{ $labels.source_ip }}"
+
+      # Credential Access
+      - alert: CredentialAccessAttempt
+        expr: increase(credential_access_attempts_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Decoy credential access detected"
+          description: "Canary credential {{ $labels.credential_name }} was accessed"
+
+      # High Connection Rate
+      - alert: HighConnectionRate
+        expr: rate(honeypot_connection_total[1m]) > 50
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High connection rate to honeypots"
+          description: "Connection rate exceeds 50/min"
+
+      # Honeypot Down
+      - alert: HoneypotDown
+        expr: up{job="honeypots"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Honeypot {{ $labels.app }} is down"
+          description: "Honeypot has been unreachable for 5 minutes"
+
+  - name: resource-alerts
+    interval: 60s
+    rules:
+      # Memory Usage High
+      - alert: HoneypotMemoryHigh
+        expr: container_memory_usage_bytes{container=~".*honeypot.*"} / container_spec_memory_limit_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Honeypot memory usage high"
+          description: "{{ $labels.container }} using > 80% of memory limit"
+
+      # CPU Throttling
+      - alert: HoneypotCPUThrottled
+        expr: rate(container_cpu_cfs_throttled_periods_total{container=~".*honeypot.*"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Honeypot CPU being throttled"
+          description: "{{ $labels.container }} is being CPU throttled"

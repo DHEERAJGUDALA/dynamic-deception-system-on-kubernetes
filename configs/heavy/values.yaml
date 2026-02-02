@@ -1,0 +1,362 @@
+# Heavy Profile Configuration
+# Target: 8GB+ RAM allocation
+# Use case: Production servers, dedicated deception infrastructure
+
+profile: heavy
+totalMemoryBudget: "8Gi"
+
+global:
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: "high-priority"
+
+  # Production settings
+  cpuManager:
+    enabled: true
+    policy: "static"
+
+  # Pod disruption budgets
+  pdb:
+    enabled: true
+    minAvailable: 1
+
+# Honeypot Configuration
+honeypots:
+  ssh:
+    enabled: true
+    replicas: 2  # HA
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+    config:
+      maxConnections: 200
+      banTime: "600s"
+      logLevel: "DEBUG"
+      enableGeoIP: true
+
+    # Anti-detection features
+    antiDetection:
+      enabled: true
+      randomDelay: true
+      realisticBanner: true
+
+  http:
+    enabled: true
+    replicas: 2
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+    config:
+      maxConnections: 500
+      requestTimeout: "60s"
+      enableTLS: true
+
+    # Multiple fake services
+    services:
+      - path: "/admin"
+        type: "wordpress"
+      - path: "/phpmyadmin"
+        type: "phpmyadmin"
+      - path: "/api"
+        type: "rest-api"
+
+  database:
+    enabled: true
+    replicas: 2
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+    config:
+      protocols:
+        - mysql
+        - postgresql
+        - mongodb
+      maxConnections: 100
+      queryLog: true
+      sqlInjectionDetection: true
+
+  smtp:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+
+    config:
+      maxMessageSize: "10Mi"
+      enableTLS: true
+      spamTrapEnabled: true
+
+# Operator Configuration
+operator:
+  replicas: 2  # HA with leader election
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+  reconcileInterval: "15s"
+
+  leaderElection:
+    enabled: true
+    leaseDuration: "15s"
+    renewDeadline: "10s"
+    retryPeriod: "2s"
+
+  credentialRotation:
+    enabled: true
+    interval: "4h"
+
+  canaryTokens:
+    enabled: true
+    rotationInterval: "2h"
+
+  # Advanced features
+  dynamicDeployment:
+    enabled: true
+    autoScale: true
+    minReplicas: 1
+    maxReplicas: 5
+
+# Monitoring Configuration
+monitoring:
+  prometheus:
+    enabled: true
+    retention: "7d"
+    scrapeInterval: "15s"
+    evaluationInterval: "15s"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "200m"
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+
+    storage:
+      enabled: true
+      size: "20Gi"
+      storageClass: "fast"
+
+    # Remote write for long-term storage
+    remoteWrite:
+      enabled: false
+      url: ""
+
+    queryMaxSamples: 200000
+    queryTimeout: "120s"
+
+    alerting:
+      enabled: true
+      alertmanager:
+        enabled: true
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "25m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+  loki:
+    enabled: true
+    retention: "168h"  # 7 days
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    storage:
+      enabled: true
+      size: "10Gi"
+
+    ingester:
+      chunkRetention: "4h"
+      maxChunkAge: "4h"
+      chunkBlockSize: 524288
+      chunkEncoding: "snappy"
+
+    queryLimits:
+      maxEntriesLimitPerQuery: 10000
+      maxQuerySeries: 2000
+
+  grafana:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    persistence:
+      enabled: true
+      size: "5Gi"
+
+    dashboards:
+      preload: true
+      defaultHome: "deception-overview"
+
+    alerting:
+      enabled: true
+      evaluationTimeout: "60s"
+
+    # Additional datasources
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus:9090
+        isDefault: true
+      - name: Loki
+        type: loki
+        url: http://loki:3100
+      - name: Alertmanager
+        type: alertmanager
+        url: http://alertmanager:9093
+
+# Weave Scope Configuration (Full Features)
+weaveScope:
+  enabled: true
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "150m"
+    limits:
+      memory: "512Mi"
+      cpu: "750m"
+
+  app:
+    probeInterval: "3s"
+    disableControls: false
+    disableProcfs: false
+    window: "15m"
+    maxConnections: 500
+
+  probe:
+    spyInterval: "1s"
+    noControls: false
+
+    docker:
+      enabled: true
+      interval: "5s"
+
+    kubernetes:
+      enabled: true
+      interval: "5s"
+
+# E-commerce Demo Services (Full)
+ecommerce:
+  enabled: true
+
+  frontend:
+    replicas: 2
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+
+  api:
+    replicas: 2
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "300m"
+
+  database:
+    type: "postgresql"
+    replicas: 1
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    persistence:
+      enabled: true
+      size: "5Gi"
+
+# Network Policies
+networkPolicies:
+  enabled: true
+  denyByDefault: true
+  strictMode: true
+
+  allowRules:
+    - name: allow-monitoring
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+    - name: allow-honeypot-ingress
+      ports:
+        - port: 2222
+        - port: 8080
+        - port: 3306
+        - port: 2525
+
+# Logging Configuration
+logging:
+  level: DEBUG
+  format: json
+
+  maxSize: "100Mi"
+  maxBackups: 10
+  maxAge: "30d"
+
+  # Ship to external
+  externalShipping:
+    enabled: false
+    type: "elasticsearch"
+    url: ""
+
+# Threat Intelligence Integration
+threatIntel:
+  enabled: true
+
+  feeds:
+    - name: "abuse-ch"
+      url: "https://feodotracker.abuse.ch/downloads/ipblocklist.txt"
+      interval: "1h"
+    - name: "emerging-threats"
+      url: "https://rules.emergingthreats.net/blockrules/compromised-ips.txt"
+      interval: "6h"
+
+  # Local blocklist
+  customBlocklist:
+    enabled: true
+    path: "/etc/deception/blocklist.txt"

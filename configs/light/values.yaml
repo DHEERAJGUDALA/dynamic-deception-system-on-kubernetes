@@ -1,0 +1,161 @@
+# Light Profile Configuration
+# Target: 4GB RAM allocation
+# Use case: Raspberry Pi, small VMs, testing environments
+
+profile: light
+totalMemoryBudget: "4Gi"
+
+global:
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: "low-priority"
+
+# Honeypot Configuration
+honeypots:
+  ssh:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+
+  http:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+
+  database:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+
+  smtp:
+    enabled: false  # Disabled in light mode
+    replicas: 0
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+
+# Operator Configuration
+operator:
+  replicas: 1
+  resources:
+    requests:
+      memory: "32Mi"
+      cpu: "25m"
+    limits:
+      memory: "64Mi"
+      cpu: "100m"
+
+  # Reduced reconciliation frequency
+  reconcileInterval: "60s"
+
+  # Credential rotation
+  credentialRotation:
+    enabled: true
+    interval: "24h"
+
+# Monitoring Configuration
+monitoring:
+  prometheus:
+    enabled: true
+    retention: "6h"  # Reduced retention
+    scrapeInterval: "60s"  # Less frequent scraping
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "256Mi"
+        cpu: "200m"
+
+    # Storage optimization
+    storage:
+      enabled: false  # Use emptyDir
+      size: "1Gi"
+
+  loki:
+    enabled: true
+    retention: "12h"
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "25m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+
+    # Compression settings
+    ingester:
+      chunkRetention: "1h"
+      maxChunkAge: "1h"
+
+  grafana:
+    enabled: true
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "25m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+
+    # Disable features to save memory
+    dashboards:
+      preload: false
+    alerting:
+      enabled: false  # Use Prometheus alerting only
+
+# Weave Scope Configuration
+weaveScope:
+  enabled: true
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+  # Optimization settings
+  app:
+    # Reduce polling frequency
+    probeInterval: "15s"
+    # Disable expensive features
+    disableControls: true
+    disableProcfs: true
+
+  probe:
+    # Reduce data collection
+    spyInterval: "10s"
+    pluginsRoot: ""
+    noControls: true
+
+# E-commerce Demo (minimal)
+ecommerce:
+  enabled: false  # Disabled in light mode to save resources
+
+# Network Policies
+networkPolicies:
+  enabled: true
+  denyByDefault: true

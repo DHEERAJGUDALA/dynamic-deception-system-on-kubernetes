@@ -1,0 +1,534 @@
+# =============================================================================
+# DECEPTION LAYER - 8 HONEYPOTS MIMICKING REAL SERVICES
+# =============================================================================
+# These honeypots appear as legitimate e-commerce infrastructure to attackers.
+# All attacks are trapped, logged, and the attacker never reaches real services.
+# =============================================================================
+
+---
+# 1. FAKE FRONTEND (Mimics e-commerce web frontend)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-honeypot
+  namespace: deception-system
+  labels:
+    app: frontend-honeypot
+    component: honeypot
+    tier: frontend
+    scope.weave.works/role: honeypot
+    scope.weave.works/type: web
+    scope.weave.works/risk: decoy
+    scope.weave.works/category: deception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend-honeypot
+  template:
+    metadata:
+      labels:
+        app: frontend-honeypot
+        component: honeypot
+        tier: frontend
+        scope.weave.works/role: honeypot
+        scope.weave.works/type: web
+        scope.weave.works/risk: decoy
+        scope.weave.works/category: deception
+    spec:
+      containers:
+      - name: honeypot
+        image: http-honeypot:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: HONEYPOT_NAME
+          value: "frontend-honeypot"
+        - name: HONEYPOT_PORT
+          value: "8080"
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-honeypot
+  namespace: deception-system
+  labels:
+    app: frontend-honeypot
+    scope.weave.works/role: honeypot
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  selector:
+    app: frontend-honeypot
+
+---
+# 2. FAKE API GATEWAY (Mimics backend API)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-honeypot
+  namespace: deception-system
+  labels:
+    app: api-honeypot
+    component: honeypot
+    tier: backend
+    scope.weave.works/role: honeypot
+    scope.weave.works/type: api
+    scope.weave.works/risk: decoy
+    scope.weave.works/category: deception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-honeypot
+  template:
+    metadata:
+      labels:
+        app: api-honeypot
+        component: honeypot
+        tier: backend
+        scope.weave.works/role: honeypot
+        scope.weave.works/type: api
+        scope.weave.works/risk: decoy
+        scope.weave.works/category: deception
+    spec:
+      containers:
+      - name: honeypot
+        image: http-honeypot:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: HONEYPOT_NAME
+          value: "api-honeypot"
+        - name: HONEYPOT_PORT
+          value: "8080"
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-honeypot
+  namespace: deception-system
+  labels:
+    app: api-honeypot
+    scope.weave.works/role: honeypot
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  selector:
+    app: api-honeypot
+
+---
+# 3. FAKE ADMIN PANEL (High-value target for attackers)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-honeypot
+  namespace: deception-system
+  labels:
+    app: admin-honeypot
+    component: honeypot
+    tier: admin
+    scope.weave.works/role: honeypot
+    scope.weave.works/type: admin
+    scope.weave.works/risk: decoy
+    scope.weave.works/category: deception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-honeypot
+  template:
+    metadata:
+      labels:
+        app: admin-honeypot
+        component: honeypot
+        tier: admin
+        scope.weave.works/role: honeypot
+        scope.weave.works/type: admin
+        scope.weave.works/risk: decoy
+        scope.weave.works/category: deception
+    spec:
+      containers:
+      - name: honeypot
+        image: http-honeypot:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: HONEYPOT_NAME
+          value: "admin-honeypot"
+        - name: HONEYPOT_PORT
+          value: "8080"
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-honeypot
+  namespace: deception-system
+  labels:
+    app: admin-honeypot
+    scope.weave.works/role: honeypot
+spec:
+  ports:
+  - port: 8081
+    targetPort: 8080
+    name: http
+  selector:
+    app: admin-honeypot
+
+---
+# 4. FAKE MySQL DATABASE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-honeypot
+  namespace: deception-system
+  labels:
+    app: mysql-honeypot
+    component: honeypot
+    tier: database
+    scope.weave.works/role: honeypot
+    scope.weave.works/type: mysql
+    scope.weave.works/risk: decoy
+    scope.weave.works/category: deception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql-honeypot
+  template:
+    metadata:
+      labels:
+        app: mysql-honeypot
+        component: honeypot
+        tier: database
+        scope.weave.works/role: honeypot
+        scope.weave.works/type: mysql
+        scope.weave.works/risk: decoy
+        scope.weave.works/category: deception
+    spec:
+      containers:
+      - name: honeypot
+        image: db-honeypot:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3306
+        env:
+        - name: HONEYPOT_NAME
+          value: "mysql-honeypot"
+        - name: HONEYPOT_PORT
+          value: "3306"
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-honeypot
+  namespace: deception-system
+  labels:
+    app: mysql-honeypot
+    scope.weave.works/role: honeypot
+spec:
+  ports:
+  - port: 3306
+    targetPort: 3306
+    name: mysql
+  selector:
+    app: mysql-honeypot
+
+---
+# 5. FAKE PostgreSQL DATABASE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-honeypot
+  namespace: deception-system
+  labels:
+    app: postgres-honeypot
+    component: honeypot
+    tier: database
+    scope.weave.works/role: honeypot
+    scope.weave.works/type: postgres
+    scope.weave.works/risk: decoy
+    scope.weave.works/category: deception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-honeypot
+  template:
+    metadata:
+      labels:
+        app: postgres-honeypot
+        component: honeypot
+        tier: database
+        scope.weave.works/role: honeypot
+        scope.weave.works/type: postgres
+        scope.weave.works/risk: decoy
+        scope.weave.works/category: deception
+    spec:
+      containers:
+      - name: honeypot
+        image: db-honeypot:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5432
+        env:
+        - name: HONEYPOT_NAME
+          value: "postgres-honeypot"
+        - name: HONEYPOT_PORT
+          value: "5432"
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-honeypot
+  namespace: deception-system
+  labels:
+    app: postgres-honeypot
+    scope.weave.works/role: honeypot
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+    name: postgres
+  selector:
+    app: postgres-honeypot
+
+---
+# 6. FAKE SSH SERVER
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-honeypot
+  namespace: deception-system
+  labels:
+    app: ssh-honeypot
+    component: honeypot
+    tier: infrastructure
+    scope.weave.works/role: honeypot
+    scope.weave.works/type: ssh
+    scope.weave.works/risk: decoy
+    scope.weave.works/category: deception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ssh-honeypot
+  template:
+    metadata:
+      labels:
+        app: ssh-honeypot
+        component: honeypot
+        tier: infrastructure
+        scope.weave.works/role: honeypot
+        scope.weave.works/type: ssh
+        scope.weave.works/risk: decoy
+        scope.weave.works/category: deception
+    spec:
+      containers:
+      - name: honeypot
+        image: ssh-honeypot:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 2222
+        env:
+        - name: HONEYPOT_NAME
+          value: "ssh-honeypot"
+        - name: HONEYPOT_PORT
+          value: "2222"
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssh-honeypot
+  namespace: deception-system
+  labels:
+    app: ssh-honeypot
+    scope.weave.works/role: honeypot
+spec:
+  ports:
+  - port: 22
+    targetPort: 2222
+    name: ssh
+  selector:
+    app: ssh-honeypot
+
+---
+# 7. FAKE REDIS CACHE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-honeypot
+  namespace: deception-system
+  labels:
+    app: redis-honeypot
+    component: honeypot
+    tier: cache
+    scope.weave.works/role: honeypot
+    scope.weave.works/type: redis
+    scope.weave.works/risk: decoy
+    scope.weave.works/category: deception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-honeypot
+  template:
+    metadata:
+      labels:
+        app: redis-honeypot
+        component: honeypot
+        tier: cache
+        scope.weave.works/role: honeypot
+        scope.weave.works/type: redis
+        scope.weave.works/risk: decoy
+        scope.weave.works/category: deception
+    spec:
+      containers:
+      - name: honeypot
+        image: db-honeypot:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 6379
+        env:
+        - name: HONEYPOT_NAME
+          value: "redis-honeypot"
+        - name: HONEYPOT_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-honeypot
+  namespace: deception-system
+  labels:
+    app: redis-honeypot
+    scope.weave.works/role: honeypot
+spec:
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    app: redis-honeypot
+
+---
+# 8. FAKE ELASTICSEARCH
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-honeypot
+  namespace: deception-system
+  labels:
+    app: elasticsearch-honeypot
+    component: honeypot
+    tier: search
+    scope.weave.works/role: honeypot
+    scope.weave.works/type: elasticsearch
+    scope.weave.works/risk: decoy
+    scope.weave.works/category: deception
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch-honeypot
+  template:
+    metadata:
+      labels:
+        app: elasticsearch-honeypot
+        component: honeypot
+        tier: search
+        scope.weave.works/role: honeypot
+        scope.weave.works/type: elasticsearch
+        scope.weave.works/risk: decoy
+        scope.weave.works/category: deception
+    spec:
+      containers:
+      - name: honeypot
+        image: http-honeypot:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 9200
+        env:
+        - name: HONEYPOT_NAME
+          value: "elasticsearch-honeypot"
+        - name: HONEYPOT_PORT
+          value: "9200"
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-honeypot
+  namespace: deception-system
+  labels:
+    app: elasticsearch-honeypot
+    scope.weave.works/role: honeypot
+spec:
+  ports:
+  - port: 9200
+    targetPort: 9200
+    name: http
+  selector:
+    app: elasticsearch-honeypot

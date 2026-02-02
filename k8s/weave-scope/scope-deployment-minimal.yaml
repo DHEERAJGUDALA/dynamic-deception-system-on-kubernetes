@@ -1,0 +1,145 @@
+# Weave Scope Minimal Deployment
+# Optimized for low-resource systems (i3 with 8GB RAM)
+# Single-pod deployment with combined app + probe
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: weave-scope
+  namespace: weave
+  labels:
+    app.kubernetes.io/name: weave-scope
+    app.kubernetes.io/component: frontend
+    scope.weave.works/role: observer
+    scope.weave.works/type: visualization
+  annotations:
+    scope.weave.works/display-role: "👁️ observer"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: weave-scope
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: weave-scope
+        app.kubernetes.io/component: frontend
+        scope.weave.works/role: observer
+        scope.weave.works/type: visualization
+        scope.weave.works/category: monitoring
+      annotations:
+        scope.weave.works/display-role: "👁️ observer"
+    spec:
+      serviceAccountName: weave-scope
+      containers:
+        - name: scope
+          image: weaveworks/scope:1.13.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - '--mode=app'
+            - '--probe.docker=false'
+            - '--weave=false'
+            - '--probe.kubernetes=true'
+            - '--probe.spy.interval=60s'
+            - '--probe.publish.interval=60s'
+            - '--app.window=15m'
+          ports:
+            - containerPort: 4040
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "150m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4040
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 4040
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            readOnlyRootFilesystem: false
+---
+# Scope Agent DaemonSet - runs on each node
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: weave-scope-agent
+  namespace: weave
+  labels:
+    app.kubernetes.io/name: weave-scope-agent
+    app.kubernetes.io/component: probe
+    scope.weave.works/role: observer
+  annotations:
+    scope.weave.works/display-role: "👁️ observer"
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: weave-scope-agent
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: weave-scope-agent
+        app.kubernetes.io/component: probe
+        scope.weave.works/role: observer
+        scope.weave.works/category: monitoring
+      annotations:
+        scope.weave.works/display-role: "👁️ observer"
+    spec:
+      serviceAccountName: weave-scope
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+      containers:
+        - name: scope-agent
+          image: weaveworks/scope:1.13.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - '--mode=probe'
+            - '--probe-only'
+            - '--probe.kubernetes=true'
+            - '--probe.docker=true'
+            - '--probe.spy.interval=60s'
+            - '--probe.publish.interval=60s'
+            - '--probe.no-controls'
+            - '--weave=false'
+            - 'weave-scope.weave.svc.cluster.local:80'
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: scope-plugins
+              mountPath: /var/run/scope/plugins
+            - name: sys-kernel-debug
+              mountPath: /sys/kernel/debug
+      volumes:
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: scope-plugins
+          hostPath:
+            path: /var/run/scope/plugins
+        - name: sys-kernel-debug
+          hostPath:
+            path: /sys/kernel/debug

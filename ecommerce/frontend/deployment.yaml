@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-frontend
+  namespace: deception-system
+  labels:
+    app: ecommerce-frontend
+    component: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecommerce-frontend
+  template:
+    metadata:
+      labels:
+        app: ecommerce-frontend
+        component: demo
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: html
+        configMap:
+          name: ecommerce-frontend-html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ecommerce-frontend-html
+  namespace: deception-system
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>SecureShop - Online Store</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .header { background: #333; color: white; padding: 20px; margin: -20px -20px 20px; }
+        .products { display: flex; flex-wrap: wrap; gap: 20px; }
+        .product { border: 1px solid #ddd; padding: 15px; width: 200px; }
+        .product img { width: 100%; height: 150px; background: #eee; }
+        .price { color: green; font-weight: bold; }
+        .login-form { max-width: 300px; margin: 20px 0; }
+        .login-form input { width: 100%; padding: 10px; margin: 5px 0; }
+        .login-form button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>SecureShop</h1>
+        <p>Your trusted online store</p>
+      </div>
+
+      <h2>Login</h2>
+      <form class="login-form" method="post" action="/api/login">
+        <input type="text" name="username" placeholder="Username">
+        <input type="password" name="password" placeholder="Password">
+        <button type="submit">Login</button>
+      </form>
+
+      <h2>Featured Products</h2>
+      <div class="products">
+        <div class="product">
+          <div class="img"></div>
+          <h3>Laptop Pro</h3>
+          <p class="price">$999.99</p>
+        </div>
+        <div class="product">
+          <div class="img"></div>
+          <h3>Smartphone X</h3>
+          <p class="price">$699.99</p>
+        </div>
+        <div class="product">
+          <div class="img"></div>
+          <h3>Tablet Air</h3>
+          <p class="price">$499.99</p>
+        </div>
+      </div>
+    </body>
+    </html>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-frontend
+  namespace: deception-system
+spec:
+  selector:
+    app: ecommerce-frontend
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http
+  type: ClusterIP

@@ -1,0 +1,213 @@
+# =============================================================================
+# REAL E-COMMERCE SERVICES - HIDDEN/PROTECTED
+# =============================================================================
+# These are the REAL services that attackers should NEVER reach.
+# They are in a separate namespace and not exposed externally.
+# =============================================================================
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ecommerce-internal
+  labels:
+    environment: production
+    visibility: internal
+    scope.weave.works/role: legitimate
+    scope.weave.works/category: application
+
+---
+# REAL Frontend (Internal Only)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: real-frontend
+  namespace: ecommerce-internal
+  labels:
+    app: real-frontend
+    component: real-service
+    scope.weave.works/role: legitimate
+    scope.weave.works/type: frontend
+    scope.weave.works/risk: protected
+    scope.weave.works/category: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: real-frontend
+  template:
+    metadata:
+      labels:
+        app: real-frontend
+        component: real-service
+        scope.weave.works/role: legitimate
+        scope.weave.works/type: frontend
+        scope.weave.works/risk: protected
+        scope.weave.works/category: application
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: real-frontend
+  namespace: ecommerce-internal
+  labels:
+    app: real-frontend
+    scope.weave.works/role: legitimate
+spec:
+  type: ClusterIP  # Internal only - not exposed
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: real-frontend
+
+---
+# REAL API (Internal Only)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: real-api
+  namespace: ecommerce-internal
+  labels:
+    app: real-api
+    component: real-service
+    scope.weave.works/role: legitimate
+    scope.weave.works/type: api
+    scope.weave.works/risk: protected
+    scope.weave.works/category: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: real-api
+  template:
+    metadata:
+      labels:
+        app: real-api
+        component: real-service
+        scope.weave.works/role: legitimate
+        scope.weave.works/type: api
+        scope.weave.works/risk: protected
+        scope.weave.works/category: application
+    spec:
+      containers:
+      - name: api
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: real-api
+  namespace: ecommerce-internal
+  labels:
+    app: real-api
+    scope.weave.works/role: legitimate
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 80
+  selector:
+    app: real-api
+
+---
+# REAL Database (Internal Only)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: real-database
+  namespace: ecommerce-internal
+  labels:
+    app: real-database
+    component: real-service
+    scope.weave.works/role: legitimate
+    scope.weave.works/type: database
+    scope.weave.works/risk: protected
+    scope.weave.works/category: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: real-database
+  template:
+    metadata:
+      labels:
+        app: real-database
+        component: real-service
+        scope.weave.works/role: legitimate
+        scope.weave.works/type: database
+        scope.weave.works/risk: protected
+        scope.weave.works/category: application
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "supersecret"
+        - name: POSTGRES_DB
+          value: "ecommerce"
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: real-database
+  namespace: ecommerce-internal
+  labels:
+    app: real-database
+    scope.weave.works/role: legitimate
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: real-database
+
+---
+# Network Policy: Block external access to real services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-external-access
+  namespace: ecommerce-internal
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          environment: production

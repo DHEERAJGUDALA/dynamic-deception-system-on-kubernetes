@@ -1,0 +1,326 @@
+# Medium Profile Configuration
+# Target: 6GB RAM allocation (optimized for 8GB system)
+# Use case: Intel i3 laptops, small development servers
+#
+# Memory Budget Breakdown:
+# - System/OS Reserve: 2GB
+# - Kubernetes overhead: ~1GB
+# - Available for workloads: ~5GB
+#
+# This profile is specifically tuned for smooth operation on:
+# - Intel i3 processors (4 cores)
+# - 8GB total system RAM
+# - SSD storage (HDD will require additional tuning)
+
+profile: medium
+totalMemoryBudget: "6Gi"
+
+global:
+  nodeSelector: {}
+  tolerations: []
+  priorityClassName: "medium-priority"
+
+  # i3 optimization: enable CPU manager
+  cpuManager:
+    enabled: true
+    policy: "static"
+
+# Honeypot Configuration
+honeypots:
+  ssh:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+    # SSH-specific settings
+    config:
+      maxConnections: 50
+      banTime: "300s"
+      logLevel: "INFO"
+
+  http:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+    # HTTP-specific settings
+    config:
+      maxConnections: 100
+      requestTimeout: "30s"
+      enableTLS: true
+
+  database:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+    # Database honeypot settings
+    config:
+      protocol: "mysql"  # mysql, postgresql
+      maxConnections: 25
+      queryLog: true
+
+  smtp:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "200m"
+
+    # SMTP-specific settings
+    config:
+      maxMessageSize: "1Mi"
+      enableTLS: true
+
+# Operator Configuration
+operator:
+  replicas: 1
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "200m"
+
+  # Reconciliation settings
+  reconcileInterval: "30s"
+
+  # Leader election (for HA)
+  leaderElection:
+    enabled: false  # Single replica
+
+  # Credential rotation
+  credentialRotation:
+    enabled: true
+    interval: "12h"
+
+  # Canary tokens
+  canaryTokens:
+    enabled: true
+    rotationInterval: "6h"
+
+# Monitoring Configuration
+monitoring:
+  prometheus:
+    enabled: true
+    retention: "24h"
+    scrapeInterval: "30s"
+    evaluationInterval: "30s"
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+
+    # Storage configuration
+    storage:
+      enabled: true
+      size: "5Gi"
+      storageClass: ""  # Use default
+
+    # Memory optimization for i3
+    queryMaxSamples: 50000
+    queryTimeout: "30s"
+
+    # Alerting rules
+    alerting:
+      enabled: true
+      rules:
+        - name: "honeypot-alerts"
+          rules:
+            - alert: SSHBruteForce
+              expr: 'rate(ssh_login_attempts_total{status="failed"}[5m]) > 10'
+              for: "1m"
+              labels:
+                severity: warning
+            - alert: SQLInjectionDetected
+              expr: 'increase(http_sql_injection_attempts_total[5m]) > 0'
+              for: "0s"
+              labels:
+                severity: critical
+
+  loki:
+    enabled: true
+    retention: "48h"
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+
+    # Chunk configuration for memory efficiency
+    ingester:
+      chunkRetention: "2h"
+      maxChunkAge: "2h"
+      chunkBlockSize: 262144
+      chunkEncoding: "snappy"
+
+    # Query limits
+    queryLimits:
+      maxEntriesLimitPerQuery: 5000
+      maxQuerySeries: 500
+
+  grafana:
+    enabled: true
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+
+    # Dashboard settings
+    dashboards:
+      preload: true
+      defaultHome: "deception-overview"
+
+    # Alerting
+    alerting:
+      enabled: true
+      evaluationTimeout: "30s"
+
+    # Data source configuration
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus:9090
+        isDefault: true
+      - name: Loki
+        type: loki
+        url: http://loki:3100
+
+# Weave Scope Configuration (Optimized for i3)
+weaveScope:
+  enabled: true
+  resources:
+    requests:
+      memory: "192Mi"
+      cpu: "100m"
+    limits:
+      memory: "384Mi"
+      cpu: "400m"
+
+  # Optimization settings for low-spec systems
+  app:
+    # Polling instead of real-time
+    probeInterval: "5s"
+
+    # Disable memory-intensive features
+    disableControls: false
+    disableProcfs: false
+
+    # Reduce history
+    window: "5m"
+
+    # Connection limits
+    maxConnections: 100
+
+  probe:
+    spyInterval: "5s"
+    pluginsRoot: ""
+    noControls: false
+
+    # Reduce DNS lookups
+    resolverHostname: ""
+
+    # Docker settings
+    docker:
+      enabled: true
+      interval: "10s"
+
+    # Kubernetes settings
+    kubernetes:
+      enabled: true
+      interval: "10s"
+
+# E-commerce Demo Services
+ecommerce:
+  enabled: true
+
+  frontend:
+    replicas: 1
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "25m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+
+  api:
+    replicas: 1
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "150m"
+
+  database:
+    # Use SQLite for medium profile
+    type: "sqlite"
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "64Mi"
+        cpu: "100m"
+
+# Network Policies
+networkPolicies:
+  enabled: true
+  denyByDefault: true
+
+  # Allow specific traffic patterns
+  allowRules:
+    - name: allow-monitoring
+      from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+    - name: allow-honeypot-ingress
+      ports:
+        - port: 2222
+        - port: 8080
+        - port: 3306
+        - port: 2525
+
+# Logging Configuration
+logging:
+  level: INFO
+  format: json
+
+  # Log rotation
+  maxSize: "50Mi"
+  maxBackups: 3
+  maxAge: "7d"

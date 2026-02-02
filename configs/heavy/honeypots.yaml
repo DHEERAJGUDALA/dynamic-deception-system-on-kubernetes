@@ -1,0 +1,396 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-honeypot
+  namespace: deception-system
+  labels:
+    app: ssh-honeypot
+    component: honeypot
+    profile: heavy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ssh-honeypot
+  template:
+    metadata:
+      labels:
+        app: ssh-honeypot
+        component: honeypot
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      priorityClassName: high-priority
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: ssh-honeypot
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: ssh-honeypot
+        image: deception-system/ssh-honeypot:latest
+        ports:
+        - containerPort: 2222
+          name: ssh
+        - containerPort: 9100
+          name: metrics
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        env:
+        - name: LOG_LEVEL
+          value: "DEBUG"
+        - name: MAX_CONNECTIONS
+          value: "200"
+        - name: BAN_TIME
+          value: "600"
+        - name: ENABLE_GEOIP
+          value: "true"
+        - name: ANTI_DETECTION
+          value: "true"
+        livenessProbe:
+          tcpSocket:
+            port: 2222
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          tcpSocket:
+            port: 2222
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/honeypot
+        - name: ssh-keys
+          mountPath: /etc/ssh/keys
+          readOnly: true
+        - name: geoip
+          mountPath: /usr/share/GeoIP
+          readOnly: true
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 500Mi
+      - name: ssh-keys
+        secret:
+          secretName: ssh-honeypot-keys
+      - name: geoip
+        configMap:
+          name: geoip-database
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssh-honeypot
+  namespace: deception-system
+spec:
+  selector:
+    app: ssh-honeypot
+  ports:
+  - port: 2222
+    targetPort: 2222
+    name: ssh
+  - port: 9100
+    targetPort: 9100
+    name: metrics
+  type: ClusterIP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ssh-honeypot-pdb
+  namespace: deception-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ssh-honeypot
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-honeypot
+  namespace: deception-system
+  labels:
+    app: http-honeypot
+    component: honeypot
+    profile: heavy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: http-honeypot
+  template:
+    metadata:
+      labels:
+        app: http-honeypot
+        component: honeypot
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      priorityClassName: high-priority
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: http-honeypot
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: http-honeypot
+        image: deception-system/http-honeypot:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9100
+          name: metrics
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        env:
+        - name: LOG_LEVEL
+          value: "DEBUG"
+        - name: MAX_CONNECTIONS
+          value: "500"
+        - name: REQUEST_TIMEOUT
+          value: "60"
+        - name: ENABLE_TLS
+          value: "true"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/honeypot
+        - name: tls-certs
+          mountPath: /etc/tls
+          readOnly: true
+        - name: fake-services
+          mountPath: /etc/honeypot/services
+          readOnly: true
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 500Mi
+      - name: tls-certs
+        secret:
+          secretName: http-honeypot-tls
+      - name: fake-services
+        configMap:
+          name: http-honeypot-services
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: http-honeypot
+  namespace: deception-system
+spec:
+  selector:
+    app: http-honeypot
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  - port: 9100
+    targetPort: 9100
+    name: metrics
+  type: ClusterIP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: http-honeypot-pdb
+  namespace: deception-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: http-honeypot
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-honeypot
+  namespace: deception-system
+  labels:
+    app: db-honeypot
+    component: honeypot
+    profile: heavy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: db-honeypot
+  template:
+    metadata:
+      labels:
+        app: db-honeypot
+        component: honeypot
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      priorityClassName: high-priority
+      containers:
+      - name: db-honeypot
+        image: deception-system/db-honeypot:latest
+        ports:
+        - containerPort: 3306
+          name: mysql
+        - containerPort: 5432
+          name: postgresql
+        - containerPort: 27017
+          name: mongodb
+        - containerPort: 9100
+          name: metrics
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        env:
+        - name: LOG_LEVEL
+          value: "DEBUG"
+        - name: PROTOCOLS
+          value: "mysql,postgresql,mongodb"
+        - name: MAX_CONNECTIONS
+          value: "100"
+        - name: QUERY_LOG
+          value: "true"
+        - name: SQL_INJECTION_DETECTION
+          value: "true"
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/honeypot
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 500Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-honeypot
+  namespace: deception-system
+spec:
+  selector:
+    app: db-honeypot
+  ports:
+  - port: 3306
+    targetPort: 3306
+    name: mysql
+  - port: 5432
+    targetPort: 5432
+    name: postgresql
+  - port: 27017
+    targetPort: 27017
+    name: mongodb
+  - port: 9100
+    targetPort: 9100
+    name: metrics
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smtp-honeypot
+  namespace: deception-system
+  labels:
+    app: smtp-honeypot
+    component: honeypot
+    profile: heavy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smtp-honeypot
+  template:
+    metadata:
+      labels:
+        app: smtp-honeypot
+        component: honeypot
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9100"
+    spec:
+      priorityClassName: high-priority
+      containers:
+      - name: smtp-honeypot
+        image: deception-system/smtp-honeypot:latest
+        ports:
+        - containerPort: 2525
+          name: smtp
+        - containerPort: 9100
+          name: metrics
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        env:
+        - name: LOG_LEVEL
+          value: "DEBUG"
+        - name: MAX_MESSAGE_SIZE
+          value: "10485760"
+        - name: ENABLE_TLS
+          value: "true"
+        - name: SPAM_TRAP_ENABLED
+          value: "true"
+        volumeMounts:
+        - name: logs
+          mountPath: /var/log/honeypot
+        - name: captured-emails
+          mountPath: /var/spool/honeypot
+      volumes:
+      - name: logs
+        emptyDir:
+          sizeLimit: 500Mi
+      - name: captured-emails
+        emptyDir:
+          sizeLimit: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smtp-honeypot
+  namespace: deception-system
+spec:
+  selector:
+    app: smtp-honeypot
+  ports:
+  - port: 2525
+    targetPort: 2525
+    name: smtp
+  - port: 9100
+    targetPort: 9100
+    name: metrics
+  type: ClusterIP

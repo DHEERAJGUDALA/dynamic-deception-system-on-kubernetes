@@ -1,0 +1,206 @@
+# Label Patches for Weave Scope Visual Topology
+# Apply these patches to add scope-specific labels to all deployments
+#
+# Usage: kubectl patch deployment <name> -n <namespace> --patch-file label-patch-<type>.yaml
+
+---
+# ===========================================
+# HONEYPOT LABELS - 🍯 Decoy Systems
+# ===========================================
+
+# SSH Honeypot Patch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-honeypot
+  namespace: deception-system
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "🍯 honeypot"
+        scope.weave.works/type: "ssh"
+        scope.weave.works/risk: "decoy"
+        scope.weave.works/category: "deception"
+        deception.topology/layer: "perimeter"
+
+---
+# HTTP Honeypot Patch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-honeypot
+  namespace: deception-system
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "🍯 honeypot"
+        scope.weave.works/type: "http"
+        scope.weave.works/risk: "decoy"
+        scope.weave.works/category: "deception"
+        deception.topology/layer: "application"
+
+---
+# Database Honeypot Patch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-honeypot
+  namespace: deception-system
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "🍯 honeypot"
+        scope.weave.works/type: "mysql"
+        scope.weave.works/risk: "decoy"
+        scope.weave.works/category: "deception"
+        deception.topology/layer: "data"
+
+---
+# SMTP Honeypot Patch (if deployed)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smtp-honeypot
+  namespace: deception-system
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "🍯 honeypot"
+        scope.weave.works/type: "smtp"
+        scope.weave.works/risk: "decoy"
+        scope.weave.works/category: "deception"
+        deception.topology/layer: "perimeter"
+
+---
+# ===========================================
+# OPERATOR LABELS - ⚙️ Controller
+# ===========================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deception-operator
+  namespace: deception-system
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "⚙️ controller"
+        scope.weave.works/type: "operator"
+        scope.weave.works/risk: "infrastructure"
+        scope.weave.works/category: "control-plane"
+        deception.topology/layer: "management"
+
+---
+# ===========================================
+# MONITORING LABELS - 👁️ Observer
+# ===========================================
+
+# Prometheus Patch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "👁️ observer"
+        scope.weave.works/type: "metrics"
+        scope.weave.works/risk: "infrastructure"
+        scope.weave.works/category: "monitoring"
+        deception.topology/layer: "observability"
+
+---
+# Grafana Patch (if deployed)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "👁️ observer"
+        scope.weave.works/type: "dashboard"
+        scope.weave.works/risk: "infrastructure"
+        scope.weave.works/category: "monitoring"
+        deception.topology/layer: "observability"
+
+---
+# Loki Patch (if deployed)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loki
+  namespace: monitoring
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "👁️ observer"
+        scope.weave.works/type: "logs"
+        scope.weave.works/risk: "infrastructure"
+        scope.weave.works/category: "monitoring"
+        deception.topology/layer: "observability"
+
+---
+# ===========================================
+# E-COMMERCE DEMO - ✓ Legitimate Services
+# ===========================================
+
+# Frontend Patch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-frontend
+  namespace: deception-system
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "✓ legitimate"
+        scope.weave.works/type: "frontend"
+        scope.weave.works/risk: "protected"
+        scope.weave.works/category: "application"
+        deception.topology/layer: "presentation"
+
+---
+# API Patch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-api
+  namespace: deception-system
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "✓ legitimate"
+        scope.weave.works/type: "api"
+        scope.weave.works/risk: "protected"
+        scope.weave.works/category: "application"
+        deception.topology/layer: "business"
+
+---
+# Database Patch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-db
+  namespace: deception-system
+spec:
+  template:
+    metadata:
+      labels:
+        scope.weave.works/role: "✓ legitimate"
+        scope.weave.works/type: "database"
+        scope.weave.works/risk: "protected"
+        scope.weave.works/category: "application"
+        deception.topology/layer: "data"

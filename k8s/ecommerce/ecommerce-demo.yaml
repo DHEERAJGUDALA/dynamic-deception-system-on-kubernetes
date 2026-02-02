@@ -1,0 +1,308 @@
+# E-Commerce Demo Application Stack
+# 5 legitimate services to contrast with honeypots
+---
+# Frontend - React/Vue Web Application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-frontend
+  namespace: deception-system
+  labels:
+    app: ecommerce-frontend
+    tier: frontend
+    scope.weave.works/role: legitimate
+    scope.weave.works/type: frontend
+    scope.weave.works/risk: protected
+    scope.weave.works/category: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecommerce-frontend
+  template:
+    metadata:
+      labels:
+        app: ecommerce-frontend
+        tier: frontend
+        component: ecommerce
+        scope.weave.works/role: legitimate
+        scope.weave.works/type: frontend
+        scope.weave.works/risk: protected
+        scope.weave.works/category: application
+      annotations:
+        scope.weave.works/display-name: "Frontend Web App"
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-frontend
+  namespace: deception-system
+  labels:
+    app: ecommerce-frontend
+    scope.weave.works/role: legitimate
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: ecommerce-frontend
+---
+# API Gateway - Node.js/Express
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-api
+  namespace: deception-system
+  labels:
+    app: ecommerce-api
+    tier: backend
+    scope.weave.works/role: legitimate
+    scope.weave.works/type: api
+    scope.weave.works/risk: protected
+    scope.weave.works/category: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecommerce-api
+  template:
+    metadata:
+      labels:
+        app: ecommerce-api
+        tier: backend
+        component: ecommerce
+        scope.weave.works/role: legitimate
+        scope.weave.works/type: api
+        scope.weave.works/risk: protected
+        scope.weave.works/category: application
+      annotations:
+        scope.weave.works/display-name: "API Gateway"
+    spec:
+      containers:
+      - name: api
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-api
+  namespace: deception-system
+  labels:
+    app: ecommerce-api
+    scope.weave.works/role: legitimate
+spec:
+  ports:
+  - port: 8081
+    targetPort: 80
+  selector:
+    app: ecommerce-api
+---
+# Product Service - Microservice
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: deception-system
+  labels:
+    app: product-service
+    tier: backend
+    scope.weave.works/role: legitimate
+    scope.weave.works/type: microservice
+    scope.weave.works/risk: protected
+    scope.weave.works/category: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+        tier: backend
+        component: ecommerce
+        scope.weave.works/role: legitimate
+        scope.weave.works/type: microservice
+        scope.weave.works/risk: protected
+        scope.weave.works/category: application
+      annotations:
+        scope.weave.works/display-name: "Product Service"
+    spec:
+      containers:
+      - name: product
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-service
+  namespace: deception-system
+  labels:
+    app: product-service
+    scope.weave.works/role: legitimate
+spec:
+  ports:
+  - port: 8082
+    targetPort: 80
+  selector:
+    app: product-service
+---
+# Order Service - Microservice
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: deception-system
+  labels:
+    app: order-service
+    tier: backend
+    scope.weave.works/role: legitimate
+    scope.weave.works/type: microservice
+    scope.weave.works/risk: protected
+    scope.weave.works/category: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+        tier: backend
+        component: ecommerce
+        scope.weave.works/role: legitimate
+        scope.weave.works/type: microservice
+        scope.weave.works/risk: protected
+        scope.weave.works/category: application
+      annotations:
+        scope.weave.works/display-name: "Order Service"
+    spec:
+      containers:
+      - name: order
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "25m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: deception-system
+  labels:
+    app: order-service
+    scope.weave.works/role: legitimate
+spec:
+  ports:
+  - port: 8083
+    targetPort: 80
+  selector:
+    app: order-service
+---
+# Database - PostgreSQL (Real)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ecommerce-db
+  namespace: deception-system
+  labels:
+    app: ecommerce-db
+    tier: database
+    scope.weave.works/role: legitimate
+    scope.weave.works/type: database
+    scope.weave.works/risk: protected
+    scope.weave.works/category: application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ecommerce-db
+  template:
+    metadata:
+      labels:
+        app: ecommerce-db
+        tier: database
+        component: ecommerce
+        scope.weave.works/role: legitimate
+        scope.weave.works/type: database
+        scope.weave.works/risk: protected
+        scope.weave.works/category: application
+      annotations:
+        scope.weave.works/display-name: "PostgreSQL Database"
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "demo-password"
+        - name: POSTGRES_DB
+          value: "ecommerce"
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ecommerce-db
+  namespace: deception-system
+  labels:
+    app: ecommerce-db
+    scope.weave.works/role: legitimate
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    app: ecommerce-db
