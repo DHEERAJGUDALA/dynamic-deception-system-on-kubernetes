@@ -1,37 +1,33 @@
 #!/bin/bash
+
 # Configuration
 REPO_URL="https://github.com/DHEERAJGUDALA/dynamic-deception-system-on-kubernetes.git"
+REPO_NAME="dynamic-deception-system-on-kubernetes"
 NAMESPACE="deception-zone"
-REPO_DIR="dynamic-deception-system-on-kubernetes"
 
-echo "🛡️ Initializing Dynamic Deception Environment..."
+echo "🛡️ Initializing Dynamic Deception System..."
 
-# 1. Cleanup & Fresh Clone
-rm -rf "$REPO_DIR"
+# 1. Cleanup and Clone
+rm -rf "$REPO_NAME"
 git clone "$REPO_URL"
-cd "$REPO_DIR" || exit
+cd "$REPO_NAME" || { echo "❌ Failed to find project folder"; exit 1; }
 
-# 2. Setup Namespace
+# 2. Create Namespace
 kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 
-# 3. Apply Resource Quotas (i3 Optimization)
-echo "⚙️ Applying Medium-tier Resource Configs..."
-kubectl apply -f configs/medium/ -n $NAMESPACE
+# 3. Apply Kubernetes Manifests from your /k8s folder
+# This uses the specific folder from your GitHub link
+if [ -d "k8s" ]; then
+    echo "📦 Deploying all manifests from the k8s directory..."
+    kubectl apply -f k8s/ -n $NAMESPACE
+else
+    echo "❌ Error: k8s folder not found in $(pwd)"
+    ls -F
+    exit 1
+fi
 
-# 4. Deploy Core Components (Order Matters!)
-echo "🚀 Deploying Target E-commerce App..."
-kubectl apply -f ecommerce/ -n $NAMESPACE
-
-echo "🕵️ Deploying Go Operator (The Brain)..."
-kubectl apply -f operator/ -n $NAMESPACE
-
-echo "🕸️ Deploying Initial Honeypots (SSH/HTTP)..."
-kubectl apply -f honeypots/ssh/ -n $NAMESPACE
-kubectl apply -f honeypots/http/ -n $NAMESPACE
-
-# 5. Setup Visualization
-echo "📊 Launching Weave Scope..."
-kubectl apply -f weave-scope/ -n $NAMESPACE
-
-echo "✅ Deployment Triggered. Checking status..."
+echo "⏳ Waiting for the environment to stabilize..."
+sleep 10
 kubectl get pods -n $NAMESPACE
+
+echo "✅ Deployment complete. System is watching for intruders."
