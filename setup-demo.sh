@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 1. Define your project details
-REPO_URL="https://github.com/YOUR_USERNAME/YOUR_REPO_NAME"
+REPO_URL="https://github.com/DHEERAJGUDALA/dynamic-deception-system-on-kubernetes"
 NAMESPACE="deception-zone"
 
 echo "🚀 Starting Dynamic Deception System Setup..."
